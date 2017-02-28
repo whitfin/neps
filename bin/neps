@@ -1,0 +1,180 @@
+#!/usr/bin/env node
+var args = require('minimist')(process.argv.slice(2));
+var async = require('async');
+var cp = require('child_process');
+var path = require('path');
+var repl  = require('repl');
+var shell = repl.start('> ');
+
+// hide the shell until we're available
+process.stdout.clearLine();
+process.stdout.cursorTo(0);
+process.stdout.write('Loading modules...\n');
+
+// pull a potentially custom prefix
+var prefix = _opt(args, [ 'p', 'prefix' ], function () {
+  return path.join(process.env.HOME, '.neps')
+});
+
+// parse arguments into pairs
+_parse(args._, function (err, pairs) {
+  if (err) {
+    throw err;
+  }
+
+  // install them
+  _load(pairs, function (err) {
+    if (err) {
+      throw err;
+    }
+
+    // attach them all to the shell
+    _attach(pairs, function (err) {
+      if (err) {
+        throw err;
+      }
+
+      // mock that the shell has loaded
+      process.stdout.write('Modules loaded.\n');
+      process.stdout.write('> ');
+    });
+  })
+});
+
+/**
+ * Attaches a set of module pairs to the shell context.
+ *
+ * The module is referenced via the contextual name used
+ * in the command line if specified, otherwise just a
+ * sanitized module name.
+ *
+ * @param modules the modules to load.
+ * @param callback the callback on completion.
+ * @private
+ */
+function _attach(modules, callback) {
+  for (var i = 0, j = modules.length; i < j; i++) {
+    var mod = modules[i];
+    var mod_location = mod.module
+      .split('/').pop()
+      .split('.').shift();
+    try {
+      var base_path = path
+        .join(prefix, 'node_modules', mod_location);
+      shell.context[mod.alias] = require(base_path);
+    } catch(e) {
+      return callback(e);
+    }
+  }
+  callback(null);
+}
+
+/**
+ * Loads all modules into the local context by installing
+ * them into the custom directory.
+ *
+ * This defaults to $HOME/.neps but can be customized.
+ *
+ * @param modules the modules to install.
+ * @param callback the callback on completion.
+ * @private
+ */
+function _load(modules, callback) {
+  async.eachSeries(
+    modules.map(function (pair) {
+      return pair.module;
+    }),
+    function loadModule(module, next) {
+      var sp = cp.spawn('npm', ['i', module, '--prefix=' + prefix]);
+
+      var stdout = '', stderr = '';
+
+      sp.stdout.on('data', function (data) {
+        stdout += data.toString();
+      });
+
+      sp.stderr.on('data', function (data) {
+        stderr += data.toString();
+      });
+
+      sp.on('close', function (code) {
+        if (code === 0) {
+          return next();
+        }
+
+        console.error(stderr);
+
+        next(new Error('Unable to install module \'' + module + '\''));
+      });
+    },
+    callback
+  );
+}
+
+/**
+ * Parses an option from the arguments with a potential
+ * default.
+ *
+ * If the argument is not found, we can use a function
+ * to generate a lazy loaded state.
+ *
+ * @param args the arguments to parse.
+ * @param flags the flags to look for.
+ * @param loader a lazy loading function.
+ * @private
+ */
+function _opt(args, flags, loader) {
+  flags = Array.isArray(flags) ? flags : [ flags ];
+
+  var found = flags.find(function (flag) {
+    return args[flag] !== undefined;
+  });
+
+  if (!found) {
+    if (!loader) {
+      return undefined;
+    }
+    return loader();
+  }
+
+  return found;
+}
+
+/**
+ * Parses the arguments into name/module pairs.
+ *
+ * Each pair has a name representing the loaded
+ * module name, and each module represents the
+ * name used when calling out to `npm`.
+ *
+ * @param signatures the signatures to parse.
+ * @param callback the callback on completion.
+ * @private
+ */
+function _parse(signatures, callback) {
+  var accepted = [];
+
+  for (var i = 0, j = signatures.length; i < j; i++) {
+    var signature = signatures[i];
+
+    var repl_n = signature;
+    var module = signature;
+
+    if (signature.indexOf('=') !== -1) {
+      var pieces = signature.split('=');
+
+      repl_n = pieces[0];
+      module = pieces[1];
+    }
+
+    accepted.push({
+      alias: repl_n
+        .split('/')
+        .pop()
+        .replace(/-/g, '_'),
+      module: module
+    });
+  }
+
+  callback(null, accepted);
+}

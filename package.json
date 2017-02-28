@@ -1,0 +1,35 @@
+{
+  "name": "neps",
+  "version": "1.0.0",
+  "description": "A simple Node.js REPL interface with module requires",
+  "author": {
+    "name": "Isaac Whitfield",
+    "email": "iw@zackehh.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/zackehh/neps.git"
+  },
+  "bugs": {
+    "email": "iw@zackehh.com",
+    "url": "http://github.com/zackehh/neps/issues"
+  },
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "preferGlobal": true,
+  "keywords": [
+    "repl",
+    "node",
+    "interactive",
+    "modules",
+    "npm",
+    "packages"
+  ],
+  "bin": {
+    "neps": "bin/neps",
+    "node-with-deps": "bin/neps"
+  },
+  "dependencies": {
+    "async": "^2.1.5"
+  }
+}
