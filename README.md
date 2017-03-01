@@ -33,6 +33,9 @@ $ neps zackehh/neps
 # loads multiple modules
 $ neps moment lodash
 
+# names with hyphens are loaded with underscores
+$ neps dot-notes
+
 # provides a custom name for a module
 $ neps _=lodash
 ```
