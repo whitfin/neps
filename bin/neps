@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 var args = require('minimist')(process.argv.slice(2));
-var async = require('async');
+var async = require('node-async-loop');
 var cp = require('child_process');
 var path = require('path');
 var repl  = require('repl');
@@ -82,7 +82,7 @@ function _attach(modules, callback) {
  * @private
  */
 function _load(modules, callback) {
-  async.eachSeries(
+  async(
     modules.map(function (pair) {
       return pair.module;
     }),
