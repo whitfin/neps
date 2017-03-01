@@ -30,6 +30,7 @@
     "node-with-deps": "bin/neps"
   },
   "dependencies": {
-    "async": "^2.1.5"
+    "async": "^2.1.5",
+    "minimist": "~1.2.0"
   }
 }
