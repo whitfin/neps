@@ -58,7 +58,8 @@ function _attach(modules, callback) {
     var mod = modules[i];
     var mod_location = mod.module
       .split('/').pop()
-      .split('.').shift();
+      .split('.').shift()
+      .split('@').shift();
     try {
       var base_path = path
         .join(prefix, 'node_modules', mod_location);
