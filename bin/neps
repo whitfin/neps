@@ -13,7 +13,8 @@ process.stdout.write('Loading modules...\n');
 
 // pull a potentially custom prefix
 var prefix = _opt(args, [ 'p', 'prefix' ], function () {
-  return path.join(process.env.HOME, '.neps')
+  var dir = process.platform == 'win32' ? 'USERPROFILE' : 'HOME';
+  return path.join(process.env[dir], '.neps')
 });
 
 // parse arguments into pairs
